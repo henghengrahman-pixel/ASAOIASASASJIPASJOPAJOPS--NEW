@@ -396,6 +396,12 @@ export class LiveChatClient {
     const chat=this.normalizeChatDetail(data,{id});
     return {chat,lifecycle:this.chatState(chat)};
   }
+  async followChat(chatId) {
+    const id=String(chatId||'').trim();
+    if(!id){ const er=new Error('LIVECHAT_CHAT_ID_REQUIRED'); er.status=400; throw er; }
+    return this.call('follow_chat',{chat_id:id});
+  }
+
   async endChat(chatId) {
     const id=String(chatId||'').trim();
     if(!id){ const er=new Error('LIVECHAT_CHAT_ID_REQUIRED'); er.status=400; throw er; }
