@@ -444,7 +444,7 @@ app.post('/api/conversations/:id/end',requireAdmin,async(req,res)=>{
   const routeId=String(req.params.id||'').trim();
   try{
     if(!routeId)return res.status(400).json({ok:false,error:'CONVERSATION_ID_REQUIRED'});
-    const out=await withChatLock(routeId,()=>endConversationByRouteId({routeId,livechat:lc,db:{getConversationLifecycleState,markConversationEnded}}));
+    const out=await withChatLock(routeId,()=>endConversationByRouteId({routeId,livechat:lc,db:{getConversationLifecycleState,markConversationEnded,closeConversationFromLiveChat}}));
     res.json(out);
   }catch(e){
     await logError('livechat','END_CHAT_FAILED',e.message,{chatId:routeId,action:e.action||'deactivate_chat',payloadKeys:e.payloadKeys||['id'],providerStatus:Number(e.status)||null,providerError:String(e.cause?.message||e.message||'').slice(0,300),safeChatId:e.chatIdSafe||null});
