@@ -34,3 +34,29 @@ test('22 archives preserve messages and attachments',()=>{assert.match(db,/conve
 test('canonical normalizer is the LiveChat inbox decision source',()=>{const c=new LiveChatClient({base:'x',accountId:'a',pat:'b'});assert.equal(c.isMyActiveChat({is_followed:true,last_thread_summary:{active:false}}),false);assert.match(lcSrc,/normalizeChatLifecycle\(summary\)/)});
 test('conversations API excludes both closed and archived',()=>assert.match(server,/visible_in_inbox=true AND c\.status NOT IN \('closed','archived'\)/));
 test('health separates discovery send and reconciliation',()=>{assert.match(poller,/livechat_discovery/);assert.match(poller,/livechat_reconciliation/);assert.match(engine,/livechat_send_message/)});
+
+test('detail threads override stale active last_thread_summary after member left',()=>{
+  const x=normalizeChatLifecycle({
+    id:'stale-summary',is_followed:true,
+    last_thread_summary:{id:'old-summary',active:true,updated_at:'2026-09-17T08:00:00Z'},
+    threads:[
+      {id:'t2',active:false,created_at:'2026-09-17T08:05:00Z'},
+      {id:'t1',active:false,created_at:'2026-09-17T08:00:00Z'}
+    ]
+  });
+  assert.equal(x.isClosed,true);
+  assert.equal(x.isActive,false);
+  assert.equal(x.shouldBeVisibleInInbox,false);
+  assert.equal(x.reason,'DETAIL_THREADS_INACTIVE');
+});
+
+test('any real active detail thread keeps an actually active chat visible',()=>{
+  const x=normalizeChatLifecycle({
+    id:'active-detail',is_followed:true,
+    last_thread_summary:{active:false},
+    threads:[{id:'old',active:false},{id:'current',active:true}]
+  });
+  assert.equal(x.isClosed,false);
+  assert.equal(x.isActive,true);
+  assert.equal(x.shouldBeVisibleInInbox,true);
+});
